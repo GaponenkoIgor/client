@@ -1,3 +1,4 @@
+import com.sun.istack.internal.NotNull;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.scene.control.PasswordField;
@@ -8,7 +9,6 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.util.concurrent.Callable;
 
 public class AuthController {
     @FXML
@@ -23,39 +23,31 @@ public class AuthController {
         Socket socket = ServerConnection.getSocket();
         in = new DataInputStream(socket.getInputStream());
         out = new DataOutputStream(socket.getOutputStream());
-        Platform.runLater(new Runnable() {
+        //TODO Callable следующая ступень развития Runnable. Позволяет вернуть результаты вычислений, а так-же пробросить ошибку, в случае возникновения.
+        // Запускается с помощью ThreadPoolExecutor, а не через создание новой Thread
+        new Thread(new Runnable() {
             @Override
             public void run() {
                 try {
                     while (true) {
-                        System.out.println("Ждем ответ от сервера");
                         String strFromServer = in.readUTF();
+                        //   /authok nick1
                         if (strFromServer.startsWith("/authok")) {
-                            Stage stage = (Stage) loginTF.getScene().getWindow();
-                            stage.close();
+                            Config.nick = strFromServer.split(" ")[1];
+                            //TODO работу с объектами fx запускаем через эту конструкцию
+                            Platform.runLater(() -> {
+                                Stage stage = (Stage) loginTF.getScene().getWindow();
+                                stage.close();
+                            });
                             break;
+
                         }
                     }
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
             }
-        });
-
-//        new Thread(() -> {
-//            try {
-//                while (true) {
-//                    String strFromServer = in.readUTF();
-//                    if (strFromServer.startsWith("/authok")) {
-//                        Stage stage = (Stage) loginTF.getScene().getWindow();
-//                        stage.close();
-//                        break;
-//                    }
-//                }
-//            } catch (Exception e) {
-//                e.printStackTrace();
-//            }
-//        }).start();
+        }).start();
     }
 
     @FXML

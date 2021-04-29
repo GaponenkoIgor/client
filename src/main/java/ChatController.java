@@ -16,9 +16,6 @@ import java.net.ConnectException;
 import java.net.Socket;
 
 public class ChatController {
-    private static boolean continueRead = true;
-
-
     private Socket socket;
     private DataInputStream in;
     private DataOutputStream out;
@@ -32,6 +29,7 @@ public class ChatController {
     private void initialize() throws IOException {
         try {
             openLoginWindow();
+            Main.mainStage.setTitle(Main.mainStage.getTitle() + " (" + Config.nick + ")");
             openConnection();
             addCloseListener();
         } catch (IOException e) {
@@ -61,7 +59,7 @@ public class ChatController {
 
         new Thread(() -> {
             try {
-                while (continueRead) {
+                while (socket.isConnected()) {
                     System.out.println("Готовы считывать");
                     String strFromServer = in.readUTF();
                     System.out.println("Считал" + strFromServer);
@@ -98,7 +96,6 @@ public class ChatController {
 
     private void closeConnection() {
         try {
-            continueRead = false;
             out.writeUTF("/end");
             socket.close();
             out.close();
